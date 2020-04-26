@@ -31,5 +31,6 @@ build/
 .vscode/
 
 src/main/resources/config.properties
+src/main/resources/temp
 # Project exclude paths
 /node_modules/
