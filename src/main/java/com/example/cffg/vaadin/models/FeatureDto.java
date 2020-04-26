@@ -7,9 +7,10 @@ import java.util.LinkedList;
 @Data
 public class FeatureDto {
 
+    private String filePath;
     private String properties;
     private String featureName;
-    private LinkedList<ScenarioDto> scenarios;
+    private LinkedList<ScenarioDto> scenarios = new LinkedList<>();
 
     public void addScenario(ScenarioDto scenarioDto){
         scenarios.add(scenarioDto);

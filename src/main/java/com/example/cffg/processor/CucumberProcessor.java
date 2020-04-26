@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -22,7 +23,7 @@ public class CucumberProcessor {
     private FeatureConstructor featureConstructor;
 
     private String defaultPath;
-    private LinkedList<FeatureDto> featureDtos = new LinkedList<>();
+    private Collection<FeatureDto> featureDtos = new LinkedList<>();
 
     public CucumberProcessor(RepositoryApiService repositoryApiService, Config config, FeatureConstructor featureConstructor) {
         this.repositoryApiService = repositoryApiService;
@@ -46,14 +47,14 @@ public class CucumberProcessor {
                 featureDtos.add(build);
             }
         }
-
+        log.info(String.valueOf(featureDtos.size()));
     }
 
     private void reconstructGlue() {
 
     }
 
-    public LinkedList<FeatureDto> getFeatureDtos(){
+    public Collection<FeatureDto> getFeatureDtos(){
         return featureDtos;
     }
 

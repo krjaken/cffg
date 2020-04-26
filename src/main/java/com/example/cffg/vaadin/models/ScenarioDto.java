@@ -10,7 +10,7 @@ public class ScenarioDto {
 
     private ScenarioTypeEnum scenarioType;
     private String name;
-    private LinkedList<FeatureStepDto> steps;
+    private LinkedList<FeatureStepDto> steps = new LinkedList<>();
     private DataExampleDto exampleDto;
 
     public void addStep(FeatureStepDto stepDto){
