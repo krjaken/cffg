@@ -1,72 +1,36 @@
 package com.example.cffg.processor;
 
-import com.example.cffg.processor.feature.FeatureConstructor;
-import com.example.cffg.vaadin.models.FeatureDto;
+import com.example.cffg.processor.cucumber.CucumberRuntimeProcessor;
+import cucumber.runtime.model.CucumberFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
 public class CucumberProcessor {
     private RepositoryApiService repositoryApiService;
     private Config config;
-    private FeatureConstructor featureConstructor;
+    private CucumberRuntimeProcessor cucumberRuntimeProcessor;
 
-    private String defaultPath;
-    private Collection<FeatureDto> featureDtos = new LinkedList<>();
-
-    public CucumberProcessor(RepositoryApiService repositoryApiService, Config config, FeatureConstructor featureConstructor) {
+    public CucumberProcessor(RepositoryApiService repositoryApiService, Config config, CucumberRuntimeProcessor cucumberRuntimeProcessor) {
         this.repositoryApiService = repositoryApiService;
         this.config = config;
-        this.featureConstructor = featureConstructor;
-        defaultPath = config.getProperty("DEFAULT_TEMP_PATH");
-        init();
-    }
+        this.cucumberRuntimeProcessor = cucumberRuntimeProcessor;
 
-    private void init() {
         repositoryApiService.readRepo();
-        reconstructFeatures();
-
     }
 
-    private void reconstructFeatures() {
-        File featureRepositoryPath = new File(defaultPath + "/" + config.getProperty("CUCUMBER_PROJECT_FEATURE_REPOSITORY_PATH"));
-        for (Path path : Objects.requireNonNull(getFilesPathByPath(featureRepositoryPath))) {
-            FeatureDto build = featureConstructor.build(path);
-            if (build!=null){
-                featureDtos.add(build);
-            }
-        }
-        log.info(String.valueOf(featureDtos.size()));
+    public List<CucumberFeature> getFeatureDtos() {
+        Optional<List<CucumberFeature>> cucumberFeatures = cucumberRuntimeProcessor.readFeature();
+        return cucumberFeatures.orElseGet(ArrayList::new);
     }
 
-    private void reconstructGlue() {
-
-    }
-
-    public Collection<FeatureDto> getFeatureDtos(){
-        return featureDtos;
-    }
-
-    private LinkedList<Path> getFilesPathByPath(File filePath) {
-        try {
-            return Files.list(Paths.get(filePath.getPath()))
-                    .filter(Files::isRegularFile).collect(Collectors.toCollection(LinkedList::new));
-        } catch (IOException e) {
-            log.error(e.getMessage());
-            e.printStackTrace();
-        }
-        return null;
+    public void getStepsDtos(){
+        cucumberRuntimeProcessor.readSteps();
     }
 
 }
