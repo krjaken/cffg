@@ -2,20 +2,14 @@ package com.example.cffg.processor.cucumber;
 
 import com.example.cffg.processor.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cucumber.api.StepDefinitionReporter;
 import cucumber.api.java.After;
 import cucumber.api.java.Before;
 import cucumber.runtime.ClassFinder;
 import cucumber.runtime.CucumberException;
-import cucumber.runtime.RuntimeGlue;
-import cucumber.runtime.StepDefinition;
-import cucumber.runtime.UndefinedStepsTracker;
 import cucumber.runtime.Utils;
 import cucumber.runtime.io.ResourceLoader;
 import cucumber.runtime.io.ResourceLoaderClassFinder;
-import cucumber.runtime.java.JavaBackend;
 import cucumber.runtime.java.StepDefAnnotation;
-import cucumber.runtime.xstream.LocalizedXStreams;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -28,28 +22,25 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 @Slf4j
 class CucumberGlueBuilder {
 
-    private ClassLoader classLoader;
-    private ResourceLoader resourceLoader;
     private ClassFinder classFinder;
     private JavaFileCompiler javaFileCompiler;
     private List<Pair<String, File>> javaFilesList;
+    private List<GlueModelDto> glueModelDtoList;
 
     CucumberGlueBuilder(ClassLoader classLoader, ResourceLoader resourceLoader, Config config) {
-        this.classLoader = classLoader;
-        this.resourceLoader = resourceLoader;
         classFinder = new ResourceLoaderClassFinder(resourceLoader, classLoader);
         javaFilesList = new ArrayList<>();
         javaFileCompiler = new JavaFileCompiler(config);
+        glueModelDtoList = new LinkedList<>();
     }
 
     public void readGlue(List<String> gluePathList) {
-        RuntimeGlue runtimeGlue = new RuntimeGlue(new UndefinedStepsTracker(), new LocalizedXStreams(classLoader));
-        JavaBackend javaBackend = new JavaBackend(resourceLoader);
 
         String[] pathList = new String[gluePathList.size()];
 
@@ -65,15 +56,7 @@ class CucumberGlueBuilder {
             printObject(compile);
         }
 
-        scan(javaBackend, glueStepClass);
-        javaBackend.loadGlue(runtimeGlue, gluePathList);
-        List<StepDefinition> list = new ArrayList();
-        runtimeGlue.reportStepDefinitions(new StepDefinitionReporter() {
-            @Override
-            public void stepDefinition(StepDefinition stepDefinition) {
-                list.add(stepDefinition);
-            }
-        });
+        scan(glueStepClass);
     }
 
     private void readJavaFiles(String[] pathList) {
@@ -126,7 +109,7 @@ class CucumberGlueBuilder {
         return stringBuilder.toString();
     }
 
-    private void scan(JavaBackend javaBackend, List<Class<?>> classList) {
+    private void scan(List<Class<?>> classList) {
         Iterator<Class<?>> iterator = classList.iterator();
         while (true) {
             Class<?> glueCodeClass = null;
@@ -148,13 +131,13 @@ class CucumberGlueBuilder {
 
             for (int var9 = 0; var9 < var8; ++var9) {
                 Method method = var7[var9];
-                this.scan(javaBackend, method, glueCodeClass);
+                this.scan(method, glueCodeClass);
             }
         }
 
     }
 
-    private void scan(JavaBackend javaBackend, Method method, Class<?> glueCodeClass) {
+    private void scan(Method method, Class<?> glueCodeClass) {
         Iterator var4 = findCucumberAnnotationClasses().iterator();
 
         while (var4.hasNext()) {
@@ -168,14 +151,17 @@ class CucumberGlueBuilder {
                 if (!glueCodeClass.equals(method.getDeclaringClass())) {
                     throw new CucumberException(String.format("You're not allowed to extend classes that define Step Definitions or hooks. %s extends %s", glueCodeClass, method.getDeclaringClass()));
                 }
-
+                GlueModelDto glueModelDto = new GlueModelDto();
+                glueModelDto.setStep(annotation);
                 if (this.isHookAnnotation(annotation)) {
                     log.info(annotation.toString());
+                    glueModelDto.setHook(true);
                     //javaBackend.addHook(annotation, method);
                 } else if (this.isStepdefAnnotation(annotation)) {
                     log.info(annotation.toString());
                     //javaBackend.addStepDefinition(annotation, method);
                 }
+                glueModelDtoList.add(glueModelDto);
             }
         }
 
@@ -198,9 +184,13 @@ class CucumberGlueBuilder {
     private void printObject(Object object) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            log.debug(objectMapper.writeValueAsString(object));
+            log.info(objectMapper.writeValueAsString(object));
         } catch (Exception e) {
             log.error(e.getMessage());
         }
+    }
+
+    public List<GlueModelDto> getGlueModelDtoList() {
+        return glueModelDtoList;
     }
 }

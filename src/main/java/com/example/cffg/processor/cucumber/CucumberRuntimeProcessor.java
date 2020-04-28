@@ -50,11 +50,11 @@ public class CucumberRuntimeProcessor {
         return Optional.empty();
     }
 
-    public Optional<List<String>> readSteps() {
+    public List<GlueModelDto> readSteps() {
 
         cucumberGlueBuilder.readGlue(Collections.singletonList(defaultPath + "/" + config.getProperty("CUCUMBER_PROJECT_GLUE_REPOSITORY_PATH")));
 
-        return Optional.empty();
+        return cucumberGlueBuilder.getGlueModelDtoList();
     }
 
     private LinkedList<String> buildArgv() {
