@@ -156,10 +156,8 @@ class CucumberGlueBuilder {
                 if (this.isHookAnnotation(annotation)) {
                     log.info(annotation.toString());
                     glueModelDto.setHook(true);
-                    //javaBackend.addHook(annotation, method);
                 } else if (this.isStepdefAnnotation(annotation)) {
                     log.info(annotation.toString());
-                    //javaBackend.addStepDefinition(annotation, method);
                 }
                 glueModelDtoList.add(glueModelDto);
             }
