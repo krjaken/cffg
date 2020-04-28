@@ -15,7 +15,7 @@
     <description>Cucumber feature files generator</description>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>11</java.version>
         <vaadin.version>14.1.25</vaadin.version>
     </properties>
 

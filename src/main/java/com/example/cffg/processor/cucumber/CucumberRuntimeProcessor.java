@@ -3,22 +3,15 @@ package com.example.cffg.processor.cucumber;
 import com.example.cffg.processor.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.notification.Notification;
-import cucumber.api.StepDefinitionReporter;
-import cucumber.runtime.RuntimeGlue;
 import cucumber.runtime.RuntimeOptions;
-import cucumber.runtime.StepDefinition;
-import cucumber.runtime.UndefinedStepsTracker;
 import cucumber.runtime.io.MultiLoader;
 import cucumber.runtime.io.ResourceLoader;
-import cucumber.runtime.java.JavaBackend;
 import cucumber.runtime.model.CucumberFeature;
-import cucumber.runtime.xstream.LocalizedXStreams;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,7 +31,7 @@ public class CucumberRuntimeProcessor {
         this.config = config;
         defaultPath = config.getProperty("DEFAULT_TEMP_PATH");
         initRuntimeOptions();
-        cucumberGlueBuilder = new CucumberGlueBuilder(classLoader, resourceLoader);
+        cucumberGlueBuilder = new CucumberGlueBuilder(classLoader, resourceLoader, config);
     }
 
     private void initRuntimeOptions() {
@@ -50,7 +43,6 @@ public class CucumberRuntimeProcessor {
     public Optional<List<CucumberFeature>> readFeature() {
 
         try {
-            printObject(runtimeOptions.stepDefinitionReporter(classLoader));
             return Optional.of(runtimeOptions.cucumberFeatures(resourceLoader));
         } catch (Exception e) {
             showError(e);
@@ -60,8 +52,7 @@ public class CucumberRuntimeProcessor {
 
     public Optional<List<String>> readSteps() {
 
-        cucumberGlueBuilder.readGlue(Collections.singletonList(defaultPath + "/" + config.getProperty("CUCUMBER_PROJECT_FEATURE_REPOSITORY_PATH")));
-
+        cucumberGlueBuilder.readGlue(Collections.singletonList(defaultPath + "/" + config.getProperty("CUCUMBER_PROJECT_GLUE_REPOSITORY_PATH")));
 
         return Optional.empty();
     }

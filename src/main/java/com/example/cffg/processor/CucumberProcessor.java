@@ -20,7 +20,9 @@ public class CucumberProcessor {
         this.repositoryApiService = repositoryApiService;
         this.config = config;
         this.cucumberRuntimeProcessor = cucumberRuntimeProcessor;
+    }
 
+    public void updateRepo() {
         repositoryApiService.readRepo();
     }
 
@@ -29,7 +31,7 @@ public class CucumberProcessor {
         return cucumberFeatures.orElseGet(ArrayList::new);
     }
 
-    public void getStepsDtos(){
+    public void getStepsDtos() {
         cucumberRuntimeProcessor.readSteps();
     }
 
