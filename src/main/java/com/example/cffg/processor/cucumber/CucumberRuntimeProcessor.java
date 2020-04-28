@@ -1,7 +1,6 @@
 package com.example.cffg.processor.cucumber;
 
 import com.example.cffg.processor.Config;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.notification.Notification;
 import cucumber.runtime.RuntimeOptions;
 import cucumber.runtime.io.MultiLoader;
@@ -75,14 +74,5 @@ public class CucumberRuntimeProcessor {
         e.printStackTrace(new PrintWriter(errors));
         log.error(errors.toString());
         Notification.show(errors.toString());
-    }
-
-    private void printObject(Object object) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            log.info(objectMapper.writeValueAsString(object));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
     }
 }

@@ -111,7 +111,7 @@ class CucumberGlueBuilder {
 
     private void scan(List<Class<?>> classList) {
         Iterator<Class<?>> iterator = classList.iterator();
-        while (true) {
+        while (iterator.hasNext()) {
             Class<?> glueCodeClass = null;
             do {
                 if (!iterator.hasNext()) {

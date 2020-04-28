@@ -1,6 +1,7 @@
 package com.example.cffg.processor;
 
 import com.example.cffg.processor.cucumber.CucumberRuntimeProcessor;
+import com.example.cffg.processor.cucumber.GlueModelDto;
 import cucumber.runtime.model.CucumberFeature;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,8 +57,8 @@ public class CucumberProcessor {
         return stringBuilder.toString();
     }
 
-    public void getStepsDtos() {
-        cucumberRuntimeProcessor.readSteps();
+    public List<GlueModelDto> getStepsDtos() {
+        return cucumberRuntimeProcessor.readSteps();
     }
 
 }

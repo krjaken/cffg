@@ -1,17 +1,55 @@
 package com.example.cffg.vaadin.tabs;
 
 import com.example.cffg.processor.CucumberProcessor;
+import com.example.cffg.processor.cucumber.GlueModelDto;
 import com.example.cffg.vaadin.TabConstructor;
-import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
+import lombok.extern.slf4j.Slf4j;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+
+@Slf4j
 public class StepsListLayout extends CffgTab {
+
+    private Div contentLayout;
+    private Grid<GlueModelDto> implementedStepsGrid;
 
     public StepsListLayout(CucumberProcessor cucumberProcessor, String label, TabConstructor tabConstructor) {
         super(cucumberProcessor, label, tabConstructor);
-        Div component = new Div();
-        component.setText(label);
-        component.setVisible(false);
-        tabConstructor.setComponent(this, component);
+        init();
+    }
+
+    private void init() {
+        contentLayout = new Div();
+        implementedStepsGrid = new Grid<>(GlueModelDto.class);
+        fillImplementedStepsGrid();
+
+        contentLayout.add(implementedStepsGrid);
+        tabConstructor.setComponent(this, contentLayout);
+    }
+
+    private void fillImplementedStepsGrid() {
+        implementedStepsGrid.removeAllColumns();
+        implementedStepsGrid.addColumn(glueModelDto -> {
+            Annotation step = glueModelDto.getStep();
+            try {
+                Method method = step.getClass().getDeclaredMethod("value");
+                method.setAccessible(true);
+                Object invoke = method.invoke(null);
+                return invoke.toString();
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+            return step.toString();
+        }).setHeader("Implemented Gherkin Step");
+        implementedStepsGrid.addColumn(glueModelDto -> {
+            Annotation step = glueModelDto.getStep();
+            return step.annotationType();
+        }).setHeader("Implementation Type");
+        implementedStepsGrid.addColumn(GlueModelDto::isHook).setHeader("Is Hook");
+
+        implementedStepsGrid.setItems(cucumberProcessor.getStepsDtos());
     }
 }
