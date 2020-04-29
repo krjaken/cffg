@@ -13,6 +13,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Arrays;
 import java.util.Collections;
 
 @Slf4j
@@ -29,8 +30,8 @@ class JavaFileCompiler {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
         Iterable<? extends JavaFileObject> compileUnit = fileManager.getJavaFileObjectsFromFiles(Collections.singleton(baseFile));
-        String[] options = {"-d", "cucumber/runtime"};
-        JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, null, null, null, compileUnit);
+        String[] options = {"-g"};
+        JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, null, Arrays.asList(options), null, compileUnit);
 
         boolean success = task.call();
 

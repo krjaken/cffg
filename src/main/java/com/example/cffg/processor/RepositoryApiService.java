@@ -24,7 +24,8 @@ public class RepositoryApiService {
         try {
             log.info("started");
             File directory = new File(config.getProperty("DEFAULT_TEMP_PATH"));
-            if (deleteFolder(directory)) {
+            if (!directory.exists() || deleteFolder(directory)) {
+
                 CloneCommand cloneCommand = Git.cloneRepository();
                 String username = config.getProperty("CUCUMBER_PROJECT_REPOSITORY_USERNAME");
                 cloneCommand.setURI(String.format(config.getProperty("CUCUMBER_PROJECT_REPOSITORY_PATH"), username));

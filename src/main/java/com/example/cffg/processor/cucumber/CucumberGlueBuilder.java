@@ -19,6 +19,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -148,7 +149,28 @@ class CucumberGlueBuilder {
                 if (!glueCodeClass.equals(method.getDeclaringClass())) {
                     throw new CucumberException(String.format("You're not allowed to extend classes that define Step Definitions or hooks. %s extends %s", glueCodeClass, method.getDeclaringClass()));
                 }
+
+
                 GlueModelDto glueModelDto = new GlueModelDto();
+                try {
+                    log.info("____________________________");
+                    log.info(method.getName());
+                    Parameter[] parameters = method.getParameters();
+                    int arg = 0;
+                    for (Parameter parameter : parameters) {
+                        String parameterName;
+                        if (parameter.isNamePresent()){
+                            parameterName = parameter.getName();
+                        }else {
+                            parameterName = "arg"+arg;
+                            arg++;
+                        }
+                        glueModelDto.addParameter(parameterName,parameter.getType());
+                    }
+                } catch (Exception e) {
+                    log.error(e.getMessage());
+                }
+
                 glueModelDto.setStep(annotation);
                 if (this.isHookAnnotation(annotation)) {
                     log.info(annotation.toString());

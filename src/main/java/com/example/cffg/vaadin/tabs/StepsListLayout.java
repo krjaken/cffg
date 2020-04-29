@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 @Slf4j
 public class StepsListLayout extends CffgTab {
@@ -50,6 +51,13 @@ public class StepsListLayout extends CffgTab {
             Annotation step = glueModelDto.getStep();
             return step.annotationType();
         }).setHeader("Implementation Type");
+        implementedStepsGrid.addColumn(glueModelDto -> {
+            StringBuilder value = new StringBuilder();
+            for (Map.Entry<String, Class<?>> entry : glueModelDto.getStepMethodParameters().entrySet()) {
+                value.append(entry.getKey()).append(": ").append(entry.getValue().getName()).append("\n");
+            }
+            return value.toString();
+        }).setHeader("Waiting Parameters");
         implementedStepsGrid.addColumn(GlueModelDto::isHook).setHeader("Is Hook");
 
         implementedStepsGrid.setItems(cucumberProcessor.getStepsDtos());

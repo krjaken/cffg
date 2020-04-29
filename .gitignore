@@ -30,8 +30,8 @@ build/
 ### VS Code ###
 .vscode/
 
-src/main/resources/config.properties
-src/main/resources/temp
-src/main/java/generated
+/src/main/resources/config.properties
+/src/main/resources/temp
+/src/main/java/generated
 # Project exclude paths
 /node_modules/
