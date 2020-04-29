@@ -54,7 +54,6 @@ class CucumberGlueBuilder {
         for (Pair<String, File> pair : javaFilesList) {
             Class<?> compile = javaFileCompiler.compile(pair);
             glueStepClass.add(compile);
-            printObject(compile);
         }
 
         scan(glueStepClass);
@@ -150,27 +149,28 @@ class CucumberGlueBuilder {
                     throw new CucumberException(String.format("You're not allowed to extend classes that define Step Definitions or hooks. %s extends %s", glueCodeClass, method.getDeclaringClass()));
                 }
 
-
                 GlueModelDto glueModelDto = new GlueModelDto();
+                glueModelDto.setSourceClassName(glueCodeClass.getName());
                 try {
-                    log.info("____________________________");
-                    log.info(method.getName());
                     Parameter[] parameters = method.getParameters();
                     int arg = 0;
                     for (Parameter parameter : parameters) {
                         String parameterName;
-                        if (parameter.isNamePresent()){
+                        if (parameter.isNamePresent()) {
                             parameterName = parameter.getName();
-                        }else {
-                            parameterName = "arg"+arg;
+                        } else {
+                            parameterName = "arg" + arg;
                             arg++;
                         }
-                        glueModelDto.addParameter(parameterName,parameter.getType());
+                        glueModelDto.addParameter(parameterName, parameter.getType());
                     }
                 } catch (Exception e) {
                     log.error(e.getMessage());
                 }
 
+                String language = annotation.annotationType()
+                        .getName().replace("cucumber.api.java.", "").split("\\.")[0];
+                glueModelDto.setLanguage(language);
                 glueModelDto.setStep(annotation);
                 if (this.isHookAnnotation(annotation)) {
                     log.info(annotation.toString());

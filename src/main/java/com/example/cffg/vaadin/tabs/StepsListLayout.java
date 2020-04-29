@@ -8,7 +8,6 @@ import com.vaadin.flow.component.html.Div;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.Map;
 
 @Slf4j
@@ -34,31 +33,36 @@ public class StepsListLayout extends CffgTab {
 
     private void fillImplementedStepsGrid() {
         implementedStepsGrid.removeAllColumns();
+        implementedStepsGrid.addColumn(GlueModelDto::getLanguage)
+                .setHeader("Language")
+                .setResizable(true)
+                .setSortable(true);
+        implementedStepsGrid.addColumn(GlueModelDto::getSourceClassName)
+                .setHeader("Source Class")
+                .setResizable(true)
+                .setSortable(true);
         implementedStepsGrid.addColumn(glueModelDto -> {
             Annotation step = glueModelDto.getStep();
-            try {
-                Method method = step.getClass().getDeclaredMethod("value");
-                method.setAccessible(true);
-                Object invoke = method.invoke(null);
-                return invoke.toString();
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
             String[] split = step.toString().split("value=\"");
             return split[split.length - 1].replace("\")", "");
-        }).setHeader("Implemented Gherkin Step");
+        }).setHeader("Implemented Gherkin Step").setResizable(true);
         implementedStepsGrid.addColumn(glueModelDto -> {
             Annotation step = glueModelDto.getStep();
             return step.annotationType();
-        }).setHeader("Implementation Type");
+        }).setHeader("Implementation Type")
+                .setResizable(true)
+                .setSortable(true);
         implementedStepsGrid.addColumn(glueModelDto -> {
             StringBuilder value = new StringBuilder();
             for (Map.Entry<String, Class<?>> entry : glueModelDto.getStepMethodParameters().entrySet()) {
-                value.append(entry.getKey()).append(": ").append(entry.getValue().getName()).append("\n");
+                String typeName = entry.getValue().getTypeName();
+                String[] split = typeName.split("\\.");
+                typeName = split[split.length - 1];
+                value.append(typeName).append(", ");
             }
             return value.toString();
-        }).setHeader("Waiting Parameters");
-        implementedStepsGrid.addColumn(GlueModelDto::isHook).setHeader("Is Hook");
+        }).setHeader("Waiting Parameters").setResizable(true);
+        implementedStepsGrid.addColumn(GlueModelDto::isHook).setHeader("Is Hook").setResizable(true);
 
         implementedStepsGrid.setItems(cucumberProcessor.getStepsDtos());
     }

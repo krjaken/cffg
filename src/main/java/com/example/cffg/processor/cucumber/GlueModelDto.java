@@ -8,6 +8,8 @@ import java.util.Map;
 
 @Data
 public class GlueModelDto {
+    private String language;
+    private String sourceClassName;
     private Annotation step;
     private boolean isHook = false;
     private Map<String, Class<?>> stepMethodParameters = new LinkedHashMap<>();
