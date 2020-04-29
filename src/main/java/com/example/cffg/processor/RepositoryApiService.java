@@ -1,5 +1,6 @@
 package com.example.cffg.processor;
 
+import com.vaadin.flow.component.notification.Notification;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
@@ -16,43 +17,45 @@ public class RepositoryApiService {
 
     public RepositoryApiService(Config config) {
         this.config = config;
+        readRepo();
     }
 
     public void readRepo() {
-
         try {
             log.info("started");
-
             File directory = new File(config.getProperty("DEFAULT_TEMP_PATH"));
-            deleteFolder(directory);
-
-            CloneCommand cloneCommand = Git.cloneRepository();
-            String username = config.getProperty("CUCUMBER_PROJECT_REPOSITORY_USERNAME");
-            cloneCommand.setURI(String.format(config.getProperty("CUCUMBER_PROJECT_REPOSITORY_PATH"), username));
-            cloneCommand.setCredentialsProvider(
-                    new UsernamePasswordCredentialsProvider(username,
-                            config.getProperty("CUCUMBER_PROJECT_REPOSITORY_PASSWORD")));
-            cloneCommand.setDirectory(directory);
-            cloneCommand.setBranch("develop");
-            cloneCommand.call();
-            log.info("ended");
+            if (deleteFolder(directory)) {
+                CloneCommand cloneCommand = Git.cloneRepository();
+                String username = config.getProperty("CUCUMBER_PROJECT_REPOSITORY_USERNAME");
+                cloneCommand.setURI(String.format(config.getProperty("CUCUMBER_PROJECT_REPOSITORY_PATH"), username));
+                cloneCommand.setCredentialsProvider(
+                        new UsernamePasswordCredentialsProvider(username,
+                                config.getProperty("CUCUMBER_PROJECT_REPOSITORY_PASSWORD")));
+                cloneCommand.setDirectory(directory);
+                cloneCommand.setBranch("develop");
+                cloneCommand.call();
+                log.info("ended");
+            } else {
+                log.error("Clear resources folder error");
+                Notification.show("Clear resources folder error");
+            }
         } catch (GitAPIException e) {
             log.error(e.getMessage());
-            e.printStackTrace();
         }
     }
 
-    private void deleteFolder(File folder) {
+    private boolean deleteFolder(File folder) {
         File[] files = folder.listFiles();
-        if (files != null) { //some JVMs return null for empty dirs
+        if (files != null) {
             for (File f : files) {
                 if (f.isDirectory()) {
                     deleteFolder(f);
                 } else {
-                    f.delete();
+                    boolean delete = f.delete();
+
                 }
             }
         }
-        folder.delete();
+        return folder.delete();
     }
 }

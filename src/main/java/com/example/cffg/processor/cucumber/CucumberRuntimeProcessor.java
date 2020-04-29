@@ -70,9 +70,7 @@ public class CucumberRuntimeProcessor {
     }
 
     private void showError(Exception e) {
-        StringWriter errors = new StringWriter();
-        e.printStackTrace(new PrintWriter(errors));
-        log.error(errors.toString());
-        Notification.show(errors.toString());
+        log.error(e.getMessage());
+        Notification.show(e.getMessage());
     }
 }

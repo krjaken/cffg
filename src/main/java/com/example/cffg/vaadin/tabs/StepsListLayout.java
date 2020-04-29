@@ -27,6 +27,7 @@ public class StepsListLayout extends CffgTab {
         fillImplementedStepsGrid();
 
         contentLayout.add(implementedStepsGrid);
+        contentLayout.setVisible(false);
         tabConstructor.setComponent(this, contentLayout);
     }
 
@@ -42,7 +43,8 @@ public class StepsListLayout extends CffgTab {
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
-            return step.toString();
+            String[] split = step.toString().split("value=\"");
+            return split[split.length - 1].replace("\")", "");
         }).setHeader("Implemented Gherkin Step");
         implementedStepsGrid.addColumn(glueModelDto -> {
             Annotation step = glueModelDto.getStep();

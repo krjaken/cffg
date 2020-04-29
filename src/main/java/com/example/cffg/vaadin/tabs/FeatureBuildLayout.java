@@ -2,7 +2,6 @@ package com.example.cffg.vaadin.tabs;
 
 import com.example.cffg.processor.CucumberProcessor;
 import com.example.cffg.vaadin.TabConstructor;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.html.Div;
 
 public class FeatureBuildLayout extends CffgTab {

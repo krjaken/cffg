@@ -70,17 +70,14 @@ class CucumberGlueBuilder {
     private void readFiles(File[] files) {
         for (File file : files) {
             if (file.isDirectory()) {
-                log.info("Directory: " + file.getName());
                 File[] listFiles = file.listFiles();
                 if (listFiles != null) {
                     readFiles(listFiles);
                 }
             } else {
                 if (file.getName().endsWith(".java")) {
-
                     javaFilesList.add(Pair.of(buildFullJavaClassName(file), file));
                 }
-                log.info("File: " + file.getName());
             }
         }
     }
