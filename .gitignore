@@ -35,3 +35,7 @@ build/
 /src/main/java/generated
 # Project exclude paths
 /node_modules/
+
+### DOCKER DEPLOY ###
+/docker/config.properties
+/docker-compose.yml
