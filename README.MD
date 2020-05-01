@@ -1,4 +1,4 @@
-### DOCKER DELOY
+### DOCKER DEPLOY
 ```bash
 cp docker/config.properties.dist docker/config.properties
 cp docker-compose.yml.dist docker-compose.yml
