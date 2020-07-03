@@ -8,6 +8,8 @@ import com.vaadin.flow.component.html.Div;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -64,6 +66,7 @@ public class StepsListLayout extends CffgTab {
         }).setHeader("Waiting Parameters").setResizable(true);
         implementedStepsGrid.addColumn(GlueModelDto::isHook).setHeader("Is Hook").setResizable(true);
 
-        implementedStepsGrid.setItems(cucumberProcessor.getStepsDtos());
+        List<GlueModelDto> stepsDtos = cucumberProcessor.getStepsDtos();
+        implementedStepsGrid.setItems(stepsDtos != null ? stepsDtos : new ArrayList<>());
     }
 }

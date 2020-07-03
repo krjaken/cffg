@@ -2,17 +2,16 @@ package com.example.cffg.processor;
 
 import com.example.cffg.processor.cucumber.CucumberRuntimeProcessor;
 import com.example.cffg.processor.cucumber.GlueModelDto;
-import cucumber.runtime.model.CucumberFeature;
+import io.cucumber.core.gherkin.Feature;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -28,12 +27,11 @@ public class CucumberProcessor {
     }
 
     public void updateRepo() {
-        repositoryApiService.readRepo();
+        //repositoryApiService.readRepo();
     }
 
-    public List<CucumberFeature> getFeatureDtoList() {
-        Optional<List<CucumberFeature>> cucumberFeatures = cucumberRuntimeProcessor.readFeature();
-        return cucumberFeatures.orElseGet(ArrayList::new);
+    public List<Pair<String, Feature>> getFeatureDtoList() {
+        return cucumberRuntimeProcessor.readFeature();
     }
 
     public String getFeatureByFileName(String fileName) {

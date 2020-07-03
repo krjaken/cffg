@@ -25,7 +25,7 @@ class JavaFileCompiler {
         this.config = config;
     }
 
-    Class<?> compile(Pair<String, File> pair) {
+    Object compile(Pair<String, File> pair) {
         File baseFile = pair.getRight();
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
@@ -38,26 +38,22 @@ class JavaFileCompiler {
         log.info("Success: " + success);
 
         if (success) {
-            addPath(baseFile.getPath().replace(".java", ".class"));
             String className = baseFile.getPath().replace(".java", "").replace("\\", ".");
             File root = new File(config.getProperty("DEFAULT_TEMP_PATH") + "/src/test/java/");
+            addPath(root);
             try {
-                log.info(className);
+                log.info("java file compile started: " + className);
                 URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{root.toURI().toURL()});
                 Class<?> aClass = Class.forName(pair.getKey(), true, classLoader);
                 try {
                     Object object = aClass.newInstance();
-                    Class<?> objectClass = object.getClass();
+                    addPath(object.getClass().getResource(object.getClass().getSimpleName() + ".class"));//baseFile.getPath().replace(".java", ".class"));
+                    return object;
                 } catch (InstantiationException e) {
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
-                Method[] methods = aClass.getMethods();
-
-                Class<?> cls = aClass;
-
-                return cls;
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (MalformedURLException e) {
@@ -67,14 +63,23 @@ class JavaFileCompiler {
         return null;
     }
 
-    private void addPath(String basePath) {
+    private void addPath(File folder) {
         try {
 
-            log.info(basePath);
-            File folder = new File(basePath);
+            log.info("add to classpath: " + folder.getPath());
             URL url = folder.toURI().toURL();
+            addPath(url);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected exception", e);
+        }
+    }
 
-            URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{folder.toURI().toURL()});
+    private void addPath(URL url) {
+        try {
+
+            log.info("add to classpath: " + url.toString());
+
+            URLClassLoader classLoader = URLClassLoader.newInstance(new URL[]{url});
             Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
             method.setAccessible(true);
             method.invoke(classLoader, url);

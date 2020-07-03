@@ -2,14 +2,11 @@ package com.example.cffg.processor.cucumber;
 
 import com.example.cffg.processor.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cucumber.api.java.After;
-import cucumber.api.java.Before;
-import cucumber.runtime.ClassFinder;
-import cucumber.runtime.CucumberException;
-import cucumber.runtime.Utils;
-import cucumber.runtime.io.ResourceLoader;
-import cucumber.runtime.io.ResourceLoaderClassFinder;
-import cucumber.runtime.java.StepDefAnnotation;
+import io.cucumber.core.backend.Glue;
+import io.cucumber.core.backend.Lookup;
+import io.cucumber.core.eventbus.EventBus;
+import io.cucumber.plugin.event.Event;
+import io.cucumber.plugin.event.EventHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -18,45 +15,150 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.BiConsumer;
 
 @Slf4j
 class CucumberGlueBuilder {
 
-    private ClassFinder classFinder;
-    private JavaFileCompiler javaFileCompiler;
-    private List<Pair<String, File>> javaFilesList;
-    private List<GlueModelDto> glueModelDtoList;
+    private Config config;
 
-    CucumberGlueBuilder(ClassLoader classLoader, ResourceLoader resourceLoader, Config config) {
-        classFinder = new ResourceLoaderClassFinder(resourceLoader, classLoader);
-        javaFilesList = new ArrayList<>();
+    private JavaFileCompiler javaFileCompiler;
+    private List<Pair<String, File>> javaFilesList = new ArrayList<>();
+    private List<Glue> glueList;
+
+    CucumberGlueBuilder(Config config) {
+        this.config = config;
         javaFileCompiler = new JavaFileCompiler(config);
-        glueModelDtoList = new LinkedList<>();
+        glueList = new ArrayList<>();
     }
 
     public void readGlue(List<String> gluePathList) {
 
-        String[] pathList = new String[gluePathList.size()];
+        File glueFile = new File(config.getProperty("DEFAULT_TEMP_PATH") + "/" + config.getProperty("CUCUMBER_PROJECT_GLUE_REPOSITORY_PATH"));
+        try {
+            String[] pathList = new String[gluePathList.size()];
 
-        for (int i = 0; i < gluePathList.size(); i++) {
-            pathList[i] = gluePathList.get(i);
+            for (int i = 0; i < gluePathList.size(); i++) {
+                pathList[i] = gluePathList.get(i);
+            }
+            readJavaFiles(pathList);
+
+            //List<URI> glue = new ArrayList<>();
+            //List<Class<?>> glueStepClass = new ArrayList<>();
+            for (Pair<String, File> pair : javaFilesList) {
+                Object compile = javaFileCompiler.compile(pair);
+
+                Object glueAdapter = initGlueAdapter();
+                initMethodScanner(compile.getClass(), (method, annotation) -> {
+                    glueAdapterAddStep(glueAdapter, method, annotation);
+                });
+                printObject(glueList);
+                log.info(String.valueOf(glueList.size()));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("ERROR: " + e.getMessage());
         }
-        readJavaFiles(pathList);
+    }
 
-        List<Class<?>> glueStepClass = new ArrayList<>();
-        for (Pair<String, File> pair : javaFilesList) {
-            Class<?> compile = javaFileCompiler.compile(pair);
-            glueStepClass.add(compile);
+    private void glueAdapterAddStep(Object glueAdapter, Method method, Annotation annotation) {
+        try {
+            Method addDefinition = glueAdapter.getClass().getDeclaredMethod("addDefinition", Method.class, Annotation.class);
+            addDefinition.setAccessible(true);
+            addDefinition.invoke(glueAdapter, method, annotation);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Object initGlueAdapter() {
+        try {
+            Class<?> aClass = Class.forName("io.cucumber.java.GlueAdaptor");
+            Constructor<?> constructor = aClass.getDeclaredConstructor(Lookup.class, Glue.class);
+            constructor.setAccessible(true);
+            Object instance = constructor.newInstance(new Lookup() {
+                @Override
+                public <T> T getInstance(Class<T> aClass) {
+                    try {
+                        return aClass.newInstance();
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                }
+            }, initGlue());
+            return instance;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Glue initGlue() {
+        try {
+            Class<?> aClass = Class.forName("io.cucumber.core.runner.CachingGlue");
+            Constructor<?> constructor = aClass.getDeclaredConstructor(EventBus.class);
+            constructor.setAccessible(true);
+            Object instance = constructor.newInstance(new EventBus() {
+                @Override
+                public Instant getInstant() {
+                    return null;
+                }
+
+                @Override
+                public UUID generateId() {
+                    return null;
+                }
+
+                @Override
+                public void send(Event event) {
+
+                }
+
+                @Override
+                public void sendAll(Iterable<Event> iterable) {
+
+                }
+
+                @Override
+                public <T extends Event> void registerHandlerFor(Class<T> aClass, EventHandler<T> eventHandler) {
+
+                }
+
+                @Override
+                public <T extends Event> void removeHandlerFor(Class<T> aClass, EventHandler<T> eventHandler) {
+
+                }
+            });
+
+            Glue glue = (Glue) instance;
+            glueList.add(glue);
+            return glue;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return null;
+    }
+
+    private void initMethodScanner(Class<?> glueClass, BiConsumer<Method, Annotation> method) {
+        try {
+            Class<?> aClass = Class.forName("io.cucumber.java.MethodScanner");
+            Method scan = aClass.getDeclaredMethod("scan", Class.class, BiConsumer.class);
+            scan.setAccessible(true);
+            scan.invoke(aClass, glueClass, method);
+        } catch (Exception e) {
+            log.error("MethodScanner init error: " + e.getMessage());
         }
 
-        scan(glueStepClass);
     }
 
     private void readJavaFiles(String[] pathList) {
@@ -86,11 +188,9 @@ class CucumberGlueBuilder {
         StringBuilder stringBuilder = new StringBuilder();
         BufferedReader reader;
         try {
-            reader = new BufferedReader(new FileReader(
-                    file));
+            reader = new BufferedReader(new FileReader(file));
             String line = reader.readLine();
             while (line != null) {
-
                 String trimmedLine = line.trim();
                 if (trimmedLine.startsWith("package ")) {
                     stringBuilder.append(trimmedLine.replace("package ", "")
@@ -106,98 +206,6 @@ class CucumberGlueBuilder {
         return stringBuilder.toString();
     }
 
-    private void scan(List<Class<?>> classList) {
-        Iterator<Class<?>> iterator = classList.iterator();
-        while (iterator.hasNext()) {
-            Class<?> glueCodeClass = null;
-            do {
-                if (!iterator.hasNext()) {
-                    continue;
-                }
-
-                Class<?> next = iterator.next();
-                printObject(next);
-                for (glueCodeClass = next;
-                     glueCodeClass != null && glueCodeClass != Object.class && !Utils.isInstantiable(glueCodeClass);
-                     glueCodeClass = glueCodeClass.getSuperclass()) {
-                }
-            } while (glueCodeClass == null);
-
-            Method[] var7 = glueCodeClass.getMethods();
-            int var8 = var7.length;
-
-            for (int var9 = 0; var9 < var8; ++var9) {
-                Method method = var7[var9];
-                this.scan(method, glueCodeClass);
-            }
-        }
-
-    }
-
-    private void scan(Method method, Class<?> glueCodeClass) {
-        Iterator var4 = findCucumberAnnotationClasses().iterator();
-
-        while (var4.hasNext()) {
-            Class<? extends Annotation> cucumberAnnotationClass = (Class) var4.next();
-            Annotation annotation = method.getAnnotation(cucumberAnnotationClass);
-            if (annotation != null) {
-                if (!method.getDeclaringClass().isAssignableFrom(glueCodeClass)) {
-                    throw new CucumberException(String.format("%s isn't assignable from %s", method.getDeclaringClass(), glueCodeClass));
-                }
-
-                if (!glueCodeClass.equals(method.getDeclaringClass())) {
-                    throw new CucumberException(String.format("You're not allowed to extend classes that define Step Definitions or hooks. %s extends %s", glueCodeClass, method.getDeclaringClass()));
-                }
-
-                GlueModelDto glueModelDto = new GlueModelDto();
-                glueModelDto.setSourceClassName(glueCodeClass.getName());
-                try {
-                    Parameter[] parameters = method.getParameters();
-                    int arg = 0;
-                    for (Parameter parameter : parameters) {
-                        String parameterName;
-                        if (parameter.isNamePresent()) {
-                            parameterName = parameter.getName();
-                        } else {
-                            parameterName = "arg" + arg;
-                            arg++;
-                        }
-                        glueModelDto.addParameter(parameterName, parameter.getType());
-                    }
-                } catch (Exception e) {
-                    log.error(e.getMessage());
-                }
-
-                String language = annotation.annotationType()
-                        .getName().replace("cucumber.api.java.", "").split("\\.")[0];
-                glueModelDto.setLanguage(language);
-                glueModelDto.setStep(annotation);
-                if (this.isHookAnnotation(annotation)) {
-                    log.info(annotation.toString());
-                    glueModelDto.setHook(true);
-                } else if (this.isStepdefAnnotation(annotation)) {
-                    log.info(annotation.toString());
-                }
-                glueModelDtoList.add(glueModelDto);
-            }
-        }
-
-    }
-
-    private Collection<Class<? extends Annotation>> findCucumberAnnotationClasses() {
-        return this.classFinder.getDescendants(Annotation.class, "cucumber.api");
-    }
-
-    private boolean isHookAnnotation(Annotation annotation) {
-        Class<? extends Annotation> annotationClass = annotation.annotationType();
-        return annotationClass.equals(Before.class) || annotationClass.equals(After.class);
-    }
-
-    private boolean isStepdefAnnotation(Annotation annotation) {
-        Class<? extends Annotation> annotationClass = annotation.annotationType();
-        return annotationClass.getAnnotation(StepDefAnnotation.class) != null;
-    }
-
     private void printObject(Object object) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -208,6 +216,6 @@ class CucumberGlueBuilder {
     }
 
     public List<GlueModelDto> getGlueModelDtoList() {
-        return glueModelDtoList;
+        return null;
     }
 }

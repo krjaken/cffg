@@ -22,7 +22,7 @@ public class RepositoryApiService {
 
     public void readRepo() {
         try {
-            log.info("started");
+            log.info("updating repo started");
             File directory = new File(config.getProperty("DEFAULT_TEMP_PATH"));
             if (!directory.exists() || deleteFolder(directory)) {
 
@@ -35,7 +35,7 @@ public class RepositoryApiService {
                 cloneCommand.setDirectory(directory);
                 cloneCommand.setBranch("develop");
                 cloneCommand.call();
-                log.info("ended");
+                log.info("updating repo ended");
             } else {
                 log.error("Clear resources folder error");
                 Notification.show("Clear resources folder error");
